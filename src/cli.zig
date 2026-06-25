@@ -103,10 +103,10 @@ fn parsePatternWithCount(input: []const u8) struct { pattern: []const u8, count:
 }
 fn printUsage() void {
     std.debug.print(
-        \\grincel — MeshCore Hex Prefix ID Generator (Vulkan GPU)
+        \\meshcore-grind — MeshCore Hex Prefix ID Generator (Vulkan GPU)
         \\
-        \\Usage: grincel <hex-pattern>[:<count>] [options]
-        \\   or: MESHCORE_PATTERN=<pattern> grincel
+        \\Usage: meshcore-grind <hex-pattern>[:<count>] [options]
+        \\   or: MESHCORE_PATTERN=<pattern> meshcore-grind
         \\
         \\Options:
         \\  -h, --help       Show this help
@@ -118,9 +118,9 @@ fn printUsage() void {
         \\Output: meshcore_<pattern>_<id>.key (hex format)
         \\
         \\Examples:
-        \\  grincel 1337cafe       # Find key with 1337cafe prefix
-        \\  grincel deadbeef:5     # Find 5 keys
-        \\  grincel aabb -t 128    # Custom workgroup size
+        \\  meshcore-grind 1337cafe       # Find key with 1337cafe prefix
+        \\  meshcore-grind deadbeef:5     # Find 5 keys
+        \\  meshcore-grind aabb -t 128    # Custom workgroup size
         \\
     , .{});
 }

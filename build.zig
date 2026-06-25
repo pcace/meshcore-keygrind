@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
     spirv_module.addAnonymousImport("vanity.spv", .{ .root_source_file = spirv_output });
 
     const exe = b.addExecutable(.{
-        .name = "grincel",
+        .name = "meshcore-grind",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,

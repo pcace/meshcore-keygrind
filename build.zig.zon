@@ -1,6 +1,6 @@
 .{
-    .fingerprint = 0xcc53533bdbabd9c3,
-    .name = .grincel,
+    .fingerprint = 0x2f29a587f48ea1b8,
+    .name = .meshcore_grind,
     .version = "0.1.0",
     .paths = .{ "src", "build.zig", "build.zig.zon" },
     .dependencies = .{

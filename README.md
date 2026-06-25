@@ -21,13 +21,13 @@ apt install libvulkan-dev glslc
 
 ```bash
 zig build -Doptimize=ReleaseFast
-./zig-out/bin/grincel cafe      # Find key with 0xcafe prefix
+./zig-out/bin/meshcore-grind cafe      # Find key with 0xcafe prefix
 ```
 
 ## Usage
 
 ```
-grincel <hex-pattern>[:<count>] [options]
+meshcore-grind <hex-pattern>[:<count>] [options]
 ```
 
 | Flag | Description |
@@ -43,11 +43,11 @@ Pattern matches the **first N bytes** of the Ed25519 public key.
 ### Examples
 
 ```bash
-grincel 00              # 1 byte  → instant
-grincel cafe            # 2 bytes → <1s
-grincel 1337cafe        # 4 bytes → ~16 min (RX 6600)
-grincel deadbeef:5      # Find 5 keys
-grincel aabb -t 128     # Custom workgroup size
+meshcore-grind 00              # 1 byte  → instant
+meshcore-grind cafe            # 2 bytes → <1s
+meshcore-grind 1337cafe        # 4 bytes → ~16 min (RX 6600)
+meshcore-grind deadbeef:5      # Find 5 keys
+meshcore-grind aabb -t 128     # Custom workgroup size
 ```
 
 ### Performance (AMD RX 6600, ~3M keys/s)
