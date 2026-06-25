@@ -366,7 +366,7 @@ pub const VulkanGrinder = struct {
         const default_threads: usize = 64;
         const threads_to_use = threads_per_group_override orelse default_threads;
         std.debug.print("Using workgroup size: {d}\n", .{threads_to_use});
-        std.debug.print("Vulkan compute mode: SHA512 + Ed25519 + Base58 + Pattern all on GPU\n", .{});
+        std.debug.print("Vulkan compute mode: Ed25519 + hex prefix match all on GPU\n", .{});
 
         const cpu_seed = @as(u64, @truncate(@as(u128, @bitCast(std.time.nanoTimestamp()))));
 
@@ -547,11 +547,10 @@ pub const VulkanGrinder = struct {
         var batch: u64 = 0;
         while (batch < num_batches) {
             if (self.runBatch()) |result| {
-                const addr_len = @min(result.address_len, 48);
                 return FoundKey{
                     .public_key = result.public_key,
                     .private_key = result.private_key,
-                    .address = try self.allocator.dupe(u8, result.address[0..addr_len]),
+                    
                     .attempts = self.attempts.load(.acquire),
                 };
             }

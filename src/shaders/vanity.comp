@@ -12,19 +12,15 @@ layout(std430, binding = 0) buffer StateBuffer {
 };
 
 layout(std430, binding = 1) buffer PatternBuffer {
-    uint length;
-    uint match_mode;  // 0=prefix, 1=suffix, 2=anywhere
-    uint ignore_case;
-    uint pattern[8];  // 32 bytes as uint array
+    uint pattern_len;        // number of hex chars (2 chars = 1 byte)
+    uint pattern_bytes[8];   // up to 32 bytes of pattern
 };
 
 layout(std430, binding = 2) buffer ResultBuffer {
     uint found;
     uint thread_id;
     uint public_key[8];    // 32 bytes
-    uint private_key[16];  // 64 bytes
-    uint address_data[12]; // 48 bytes
-    uint address_len;
+    uint private_key[16];  // 64 bytes: [scalar(32)][sha512_prefix(32)]
 };
 
 layout(std430, binding = 3) buffer FoundFlag {
@@ -434,112 +430,21 @@ void ge_p3_tobytes(out uint out_bytes[8], in GeP3 p) {
 }
 
 // ============================================================================
-// Base58 Encoding
+// Pattern Matching — Direct Byte Comparison
 // ============================================================================
 
-const uint BASE58_ALPHABET[58] = uint[58](
-    49u,50u,51u,52u,53u,54u,55u,56u,57u,  // '1'-'9'
-    65u,66u,67u,68u,69u,70u,71u,72u,74u,75u,76u,77u,78u,80u,81u,82u,83u,84u,85u,86u,87u,88u,89u,90u,  // 'A'-'Z' (no I, O)
-    97u,98u,99u,100u,101u,102u,103u,104u,105u,106u,107u,109u,110u,111u,112u,113u,114u,115u,116u,117u,118u,119u,120u,121u,122u  // 'a'-'z' (no l)
-);
+// Compare first pat_len/2 bytes of pub_key with pattern_bytes (hex prefix)
+bool pattern_matches_bytes(in uint pub_key[8], uint pat_len) {
+    uint byte_count = pat_len / 2u;  // each hex char pair = 1 byte
+    if (byte_count == 0u) return true;
+    if (byte_count > 32u) return false;
 
-// input: 8 uint32 = 32 bytes, output: 12 uint32 = 48 bytes (chars as bytes)
-int base58_encode(in uint in_data[8], out uint out_data[12]) {
-    // Count leading zero bytes
-    int zeros = 0;
-    for (int i = 0; i < 32 && zeros < 32; i++) {
-        uint byte_val = (in_data[i / 4] >> ((i % 4) * 8u)) & 0xFFu;
-        if (byte_val == 0u) zeros++;
-        else break;
+    for (uint i = 0u; i < byte_count; i++) {
+        uint pb = (pattern_bytes[i / 4u] >> ((i % 4u) * 8u)) & 0xFFu;
+        uint pk = (pub_key[i / 4u] >> ((i % 4u) * 8u)) & 0xFFu;
+        if (pb != pk) return false;
     }
-
-    // Convert to base58
-    uint b58[64];
-    for (int i = 0; i < 64; i++) b58[i] = 0u;
-    int b58_len = 0;
-
-    for (int i = zeros; i < 32; i++) {
-        uint byte_val = (in_data[i / 4] >> ((i % 4) * 8u)) & 0xFFu;
-        uint carry = byte_val;
-        for (int j = 0; j < b58_len || carry != 0u; j++) {
-            if (j < b58_len) carry += b58[j] * 256u;
-            b58[j] = carry % 58u;
-            carry /= 58u;
-            if (j >= b58_len) b58_len = j + 1;
-        }
-    }
-
-    // Clear out_data
-    for (int i = 0; i < 12; i++) out_data[i] = 0u;
-
-    // Output
-    int out_len = zeros + b58_len;
-    for (int i = 0; i < zeros; i++) {
-        int word_idx = i / 4;
-        int byte_idx = i % 4;
-        out_data[word_idx] |= 49u << (byte_idx * 8u);  // '1'
-    }
-    for (int i = 0; i < b58_len; i++) {
-        int out_idx = zeros + i;
-        int word_idx = out_idx / 4;
-        int byte_idx = out_idx % 4;
-        out_data[word_idx] |= BASE58_ALPHABET[b58[b58_len - 1 - i]] << (byte_idx * 8u);
-    }
-
-    return out_len;
-}
-
-// ============================================================================
-// Pattern Matching
-// ============================================================================
-
-uint get_pattern_byte(int idx) {
-    int word_idx = idx / 4;
-    int byte_idx = idx % 4;
-    return (pattern[word_idx] >> (byte_idx * 8u)) & 0xFFu;
-}
-
-uint get_addr_byte(in uint addr[12], int idx) {
-    int word_idx = idx / 4;
-    int byte_idx = idx % 4;
-    return (addr[word_idx] >> (byte_idx * 8u)) & 0xFFu;
-}
-
-bool pattern_matches(in uint addr[12], int addr_len) {
-    uint plen = length;
-    if (plen == 0u || addr_len < int(plen)) return false;
-
-    int start_pos, end_pos;
-
-    if (match_mode == 0u) {  // prefix
-        start_pos = 0;
-        end_pos = 1;
-    } else if (match_mode == 1u) {  // suffix
-        start_pos = addr_len - int(plen);
-        end_pos = start_pos + 1;
-    } else {  // anywhere
-        start_pos = 0;
-        end_pos = addr_len - int(plen) + 1;
-    }
-
-    for (int pos = start_pos; pos < end_pos; pos++) {
-        bool match_found = true;
-        for (uint i = 0u; i < plen && match_found; i++) {
-            uint pc = get_pattern_byte(int(i));
-            uint ac = get_addr_byte(addr, pos + int(i));
-
-            if (pc == 63u) continue;  // '?' wildcard
-
-            if (ignore_case != 0u) {
-                if (pc >= 65u && pc <= 90u) pc += 32u;
-                if (ac >= 65u && ac <= 90u) ac += 32u;
-            }
-
-            if (pc != ac) match_found = false;
-        }
-        if (match_found) return true;
-    }
-    return false;
+    return true;
 }
 
 // ============================================================================
@@ -598,41 +503,26 @@ void main() {
     GeP3 A;
     ge_scalarmult_base(A, scalar);
 
-    // Convert to compressed Edwards format
+    // Convert to compressed Edwards format (32 bytes)
     uint pub_key[8];
     ge_p3_tobytes(pub_key, A);
 
-    // Base58 encode
-    uint addr[12];
-    int addr_len = base58_encode(pub_key, addr);
-
-    // Pattern match
-    if (pattern_matches(addr, addr_len)) {
+    // Pattern match: compare public key bytes directly against pattern bytes
+    if (pattern_matches_bytes(pub_key, pattern_len)) {
         // Try to claim the result
         uint old_val = atomicCompSwap(found_flag, 0u, 1u);
         if (old_val == 0u) {
-            // We won the race - store result
             found = 1u;
             thread_id = tid;
-            address_len = uint(addr_len);
 
             // Store public key
             for (int i = 0; i < 8; i++) {
                 public_key[i] = pub_key[i];
             }
 
-            // Store private key (hash + pubkey)
+            // Store private key: [scalar(32)][sha512_prefix(32)] — MeshCore format
             for (int i = 0; i < 16; i++) {
                 private_key[i] = hash[i];
-            }
-            // Overwrite second half with pubkey
-            for (int i = 0; i < 8; i++) {
-                private_key[8 + i] = pub_key[i];
-            }
-
-            // Store address
-            for (int i = 0; i < 12; i++) {
-                address_data[i] = addr[i];
             }
         }
     }

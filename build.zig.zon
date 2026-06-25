@@ -2,17 +2,8 @@
     .fingerprint = 0xcc53533bdbabd9c3,
     .name = .grincel,
     .version = "0.1.0",
-    .paths = .{
-        "src",
-        "libs",
-        "build.zig",
-        "build.zig.zon",
-    },
+    .paths = .{ "src", "build.zig", "build.zig.zon" },
     .dependencies = .{
-        .spice = .{
-            .url = "https://github.com/judofyr/spice/archive/refs/heads/main.tar.gz",
-            .hash = "12201203010a7c0990e2e0e173dbe4bb01eb4648c4784631d5a08f57098ad1743776",
-        },
         .vulkan_zig = .{
             .url = "git+https://github.com/Snektron/vulkan-zig?ref=zig-0.15-compat#1446b0b994c2362264cc24513d7c7ec31b469c50",
             .hash = "vulkan-0.0.0-r7Ytx_VDAwAiMl0YSu2UOkVMIGJN7CeIQaxJR-hUSfD6",
@@ -20,10 +11,6 @@
         .vulkan_headers = .{
             .url = "git+https://github.com/KhronosGroup/Vulkan-Headers#0777a3ad88bad5f4b11cfd509458bbc0ddadc773",
             .hash = "N-V-__8AAMZuLQIcPe--JSv0kn_Ga8tsjgbkaojW0OHW2Rfd",
-        },
-        .zig_metal = .{
-            .url = "git+https://github.com/binoculars/zig-metal#main",
-            .hash = "N-V-__8AAPisPgBOnobLBlpfNHrw9K83kxf1I1S98aQ5-A1c",
         },
     },
 }
