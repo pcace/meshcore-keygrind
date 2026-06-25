@@ -24,6 +24,14 @@ zig build -Doptimize=ReleaseFast
 ./zig-out/bin/meshcore-grind cafe      # Find key with 0xcafe prefix
 ```
 
+Or download from [Releases](https://github.com/pcace/meshcore-keygrind/releases):
+
+```bash
+wget https://github.com/pcace/meshcore-keygrind/releases/download/v0.1.0/meshcore-keygrind-linux-x86_64.tar.gz
+tar xzf meshcore-keygrind-linux-x86_64.tar.gz
+./meshcore-grind cafe
+```
+
 ## Usage
 
 ```
@@ -81,7 +89,7 @@ Both keys are raw hex, compatible with MeshCore/Meshtastic.
 5. Compares public key bytes directly against pattern bytes
 6. On match: returns keypair in MeshCore format
 
-All steps in a single GLSL compute shader. No CPU bottleneck.
+All steps in a single GLSL compute shader — no CPU bottleneck.
 
 ## Architecture
 
