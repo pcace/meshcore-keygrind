@@ -1,4 +1,4 @@
-# keygrind
+# meshcore-keygrind
 
 GPU-accelerated **MeshCore hex prefix key generator** using Vulkan compute shaders.
 
